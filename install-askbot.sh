@@ -51,7 +51,7 @@ if [ -z "$domain" ]; then
 	domain = "example.com"
 fi
 
-read -p "This script will install Askbot in $work_dir and deploy it using nginx. Press [Enter] key to continue..."
+read -p "This script will install Askbot in $work_dir and deploy it using Apache. Press [Enter] key to continue..."
 
 # create work_dir if it doesn't exist
 if [ ! -d "$work_dir" ]; then
@@ -60,26 +60,33 @@ if [ ! -d "$work_dir" ]; then
 fi
 
 # apt update & upgrade
+echo -e "\n"
 read -p "APT update and upgrade. Press [Enter] key to continue..."
 sudo apt-get update -y
 sudo apt-get upgrade -y
 
 # install stuff
+echo -e "\n"
 read -p "Starting python-virtualenv git libpq-dev python-dev postgresql postgresql-contrib installation. Press [Enter] key to continue..."
 sudo apt-get install python-virtualenv git libpq-dev python-dev postgresql postgresql-contrib -y
 sudo easy_install -U pip
 sudo pip install -U mock
 
+echo -e "\n"
 read -p "Cloning Askbot from github into $work_dir/_askbot-devel. Press [Enter] key to continue..."
 git clone git://github.com/ASKBOT/askbot-devel.git $work_dir/_askbot-devel
 cd $work_dir/_askbot-devel
+
+echo -e "\n"
+read -p "Installing Askbot. Press [Enter] key to continue..."
 sudo python setup.py install -v
 
-echo "Removing the git clone since it's no longer needed."
+echo -e "\nRemoving the git clone since it's no longer needed."
 cd $work_dir
 sudo rm -rf _askbot-devel
 
 #create user and db
+echo -e "\n"
 read -p "Creating $db_name database with db_userame: $db_user and password: $db_pass. Press [Enter] key to continue..."
 sudo pip install psycopg2
 sudo -u postgres psql -U postgres -c "create role $db_user with createdb login encrypted password '$db_pass';"
@@ -88,25 +95,30 @@ sudo -u postgres psql -U postgres -c "create database $db_name with owner=$db_us
 # get the hba_conf path
 hba_path=`sudo -u postgres psql -U postgres -c "show hba_file;" | awk 'NR==3 {print $1}'`
 
-echo "Editing the hba_file"
+echo -e "\nEditing the hba_file"
 sudo sed -i "1s/^/local   "$db_name"             "$db_user"                                md5 \n/" $hba_path
 
-echo "Restart postgresql"
+echo -e "\nRestart postgresql"
 sudo /etc/init.d/postgresql restart
 cd $work_dir
 
+echo -e "\n"
 read -p "Starting Askbot setup. Press [Enter] key to continue..."
 askbot-setup -n . -e 1 -d $db_name -u $db_user -p $db_pass –domain=example.com
 
+echo -e "\n"
 read -p "Starting python manage.py collectstatic. Press [Enter] key to continue..."
 python manage.py collectstatic
 
+echo -e "\n"
 read -p "Starting python manage.py syncdb. Press [Enter] key to continue..."
 python manage.py syncdb
 
+echo -e "\n"
 read -p "Starting python manage.py migrate askbot. Press [Enter] key to continue..."
 python manage.py migrate askbot
 
+echo -e "\n"
 read -p "Starting python manage.py migrate django_authopenid. Press [Enter] key to continue..."
 python manage.py migrate django_authopenid #embedded login application
 
@@ -116,24 +128,25 @@ python manage.py migrate django_authopenid #embedded login application
 ###########
 
 # Apache and mod_wsgi
+echo -e "\n"
 read -p "Starting apache2 and mod_wsgi deployment. Press [Enter] key to continue..."
 sudo apt-get install apache2 apache2.2-common apache2-mpm-prefork apache2-utils libexpat1 ssl-cert libapache2-mod-wsgi -y
 sudo service apache2 stop
 
-echo "Configuring $domain.conf file"
+echo -e "\nConfiguring $domain.conf file"
 cp $deploy_dir/askbot_apache_default.conf $work_dir/$domain.conf
 sed -i "s#/workdir#"$work_dir"#g" $work_dir/$domain.conf
 sed -i "s#127.0.0.1#"$ip_addr"#g" $work_dir/$domain.conf
 sed -i "s#domain-name#"$domain"#g" $work_dir/$domain.conf
 
-echo "Copying askbot_apache_default.conf to apache direcory"
+echo -e "\nCopying askbot_apache_default.conf to apache direcory"
 sudo cp $work_dir/$domain.conf /etc/apache2/sites-available/$domain.conf
 
-echo "Create logdir and socket dir"
+echo -e "\nCreate logdir and socket dir"
 sudo mkdir /var/log/apache2/$domain
 sudo mkdir $work_dir/socket
 
-echo "Fixing permisssions..."
+echo -e "\nFixing permisssions..."
 cd $work_dir
 cd .. #go one level up
 sudo chown -R $USER:www-data $work_dir
@@ -141,12 +154,12 @@ chmod -R g+w $work_dir/askbot/upfiles
 chmod -R g+w $work_dir/log
 chmod -R g+w $work_dir/socket
 
-echo "Enabling mod_rewrite and $domain"
+echo -e "\nEnabling mod_rewrite and $domain"
 sudo a2enmod rewrite
 sudo a2ensite $domain
 
-echo "Start apache2"
+echo -e "\nStart apache2"
 sudo service apache2 start
 
-echo "Finished the deployment. Visit http://$ip_addr or http://$domain to test it."
+echo -e "\nFinished the deployment. Visit http://$ip_addr or http://$domain to test it."
 exit 0
