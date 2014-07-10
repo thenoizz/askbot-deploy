@@ -112,6 +112,7 @@ python manage.py collectstatic
 
 echo -e "\n"
 read -p "Starting python manage.py syncdb. Press [Enter] key to continue..."
+python manage.py syncdb || true
 python manage.py syncdb
 
 echo -e "\n"
