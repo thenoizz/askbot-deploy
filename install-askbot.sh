@@ -131,7 +131,7 @@ python manage.py migrate django_authopenid #embedded login application
 # Apache and mod_wsgi
 echo -e "\n"
 read -p "Starting apache2 and mod_wsgi deployment. Press [Enter] key to continue..."
-sudo apt-get install apache2 apache2.2-common apache2-mpm-prefork apache2-utils libexpat1 ssl-cert libapache2-mod-wsgi -y
+sudo apt-get install apache2 apache2-bin apache2-mpm-prefork apache2-utils libexpat1 ssl-cert libapache2-mod-wsgi -y
 sudo service apache2 stop
 
 echo -e "\nConfiguring $domain.conf file"
