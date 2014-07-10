@@ -25,12 +25,12 @@
 
 set -e
 
-EXPECTED_ARGS=4
+EXPECTED_ARGS=6
 E_BADARGS=65
 
 if [ $# -ne $EXPECTED_ARGS ]
 then
-  echo "Not enough args. Usage: $0 db_name db_user db_pass work_dir [ip_addr] [domain]"
+  echo "Not enough args. Usage: $0 db_name db_user db_pass work_dir ip_addr domain"
   exit $E_BADARGS
 fi
 
